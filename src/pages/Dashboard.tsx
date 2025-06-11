@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, UserX, DollarSign, Calendar } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
+import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DashboardStats {
@@ -22,6 +23,7 @@ export const Dashboard = () => {
   });
   const [paymentTrends, setPaymentTrends] = useState([]);
   const { apiCall, loading } = useApi();
+  const { getCurrencySymbol } = useAuth();
 
   useEffect(() => {
     fetchDashboardData();
@@ -106,6 +108,8 @@ export const Dashboard = () => {
     }
   };
 
+  const currencySymbol = getCurrencySymbol();
+
   const statCards = [
     {
       title: 'Total Active Members',
@@ -123,7 +127,7 @@ export const Dashboard = () => {
     },
     {
       title: 'Total Payments Collected',
-      value: `₹${stats.totalPayments.toLocaleString()}`,
+      value: `${currencySymbol}${stats.totalPayments.toLocaleString()}`,
       icon: DollarSign,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -190,7 +194,7 @@ export const Dashboard = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip 
-                  formatter={(value) => [`₹${value}`, 'Amount']}
+                  formatter={(value) => [`${currencySymbol}${value}`, 'Amount']}
                   labelFormatter={(label) => `Month: ${label}`}
                 />
                 <Line 

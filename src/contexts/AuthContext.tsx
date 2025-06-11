@@ -20,6 +20,7 @@ interface AuthContextType {
   verifyOTP: (email: string, otp: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  getCurrencySymbol: () => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +31,100 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+// Currency mapping based on country
+const currencyMap: { [key: string]: string } = {
+  'Pakistan': '₨',
+  'India': '₹',
+  'United States': '$',
+  'Canada': 'C$',
+  'United Kingdom': '£',
+  'Australia': 'A$',
+  'Germany': '€',
+  'France': '€',
+  'Japan': '¥',
+  'China': '¥',
+  'Brazil': 'R$',
+  'South Africa': 'R',
+  'UAE': 'AED',
+  'Saudi Arabia': 'SAR',
+  'Turkey': '₺',
+  'Russia': '₽',
+  'Mexico': '$',
+  'Bangladesh': '৳',
+  'Sri Lanka': 'Rs',
+  'Nepal': 'Rs',
+  'Malaysia': 'RM',
+  'Singapore': 'S$',
+  'Thailand': '฿',
+  'Indonesia': 'Rp',
+  'Philippines': '₱',
+  'Vietnam': '₫',
+  'South Korea': '₩',
+  'Egypt': 'E£',
+  'Nigeria': '₦',
+  'Kenya': 'KSh',
+  'Ghana': '₵',
+  'Morocco': 'MAD',
+  'Algeria': 'DA',
+  'Ethiopia': 'Br',
+  'Tanzania': 'TSh',
+  'Uganda': 'USh',
+  'Zimbabwe': '$',
+  'Botswana': 'P',
+  'Namibia': 'N$',
+  'Zambia': 'ZK',
+  'Malawi': 'MK',
+  'Rwanda': 'RF',
+  'Burundi': 'FBu',
+  'Madagascar': 'Ar',
+  'Mauritius': '₨',
+  'Seychelles': '₨',
+  'Maldives': 'Rf',
+  'Afghanistan': '؋',
+  'Iran': '﷼',
+  'Iraq': 'IQD',
+  'Jordan': 'JD',
+  'Kuwait': 'KD',
+  'Lebanon': 'LL',
+  'Oman': 'OMR',
+  'Qatar': 'QR',
+  'Syria': 'SP',
+  'Yemen': '﷼',
+  'Bahrain': 'BD',
+  'Israel': '₪',
+  'Palestine': 'ILS',
+  'Cyprus': '€',
+  'Georgia': '₾',
+  'Armenia': '֏',
+  'Azerbaijan': '₼',
+  'Kazakhstan': '₸',
+  'Kyrgyzstan': 'som',
+  'Tajikistan': 'TJS',
+  'Turkmenistan': 'm',
+  'Uzbekistan': 'soʻm',
+  'Mongolia': '₮',
+  'Bhutan': 'Nu',
+  'Myanmar': 'K',
+  'Laos': '₭',
+  'Cambodia': '៛',
+  'Brunei': 'B$',
+  'East Timor': '$',
+  'Fiji': 'FJ$',
+  'Papua New Guinea': 'K',
+  'Solomon Islands': 'SI$',
+  'Vanuatu': 'VT',
+  'Samoa': 'WS$',
+  'Tonga': 'T$',
+  'Cook Islands': '$',
+  'Kiribati': '$',
+  'Marshall Islands': '$',
+  'Micronesia': '$',
+  'Nauru': '$',
+  'Niue': '$',
+  'Palau': '$',
+  'Tuvalu': '$'
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -48,6 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+  const getCurrencySymbol = () => {
+    if (user?.country && currencyMap[user.country]) {
+      return currencyMap[user.country];
+    }
+    return '$'; // Default to USD
+  };
+
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -59,16 +161,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(result.message || 'Login failed');
       }
 
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Handle the correct API response structure
+      const { data } = result;
+      const userToken = data.session.access_token;
+      const userData = data.user;
+
+      setToken(userToken);
+      setUser(userData);
+      localStorage.setItem('token', userToken);
+      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       throw error;
     } finally {
@@ -112,16 +219,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ email, otp }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || 'OTP verification failed');
+        throw new Error(result.message || 'OTP verification failed');
       }
 
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Handle the correct API response structure for OTP verification
+      const { data } = result;
+      const userToken = data.session.access_token;
+      const userData = data.user;
+
+      setToken(userToken);
+      setUser(userData);
+      localStorage.setItem('token', userToken);
+      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       throw error;
     } finally {
@@ -144,7 +256,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register,
       verifyOTP,
       logout,
-      loading
+      loading,
+      getCurrencySymbol
     }}>
       {children}
     </AuthContext.Provider>

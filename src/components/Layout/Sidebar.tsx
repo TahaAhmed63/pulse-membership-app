@@ -35,7 +35,12 @@ export const Sidebar = () => {
       {/* Logo and Gym Name */}
       <div className="p-6 border-b border-slate-700">
         <h2 className="text-xl font-bold text-emerald-400">GymManager</h2>
-        <p className="text-sm text-slate-300 mt-1">{user?.gym_name || 'Fitness Center'}</p>
+        <p className="text-sm text-slate-300 mt-1">
+          {user?.gym_name || `${user?.name}'s Gym` || 'Fitness Center'}
+        </p>
+        {user?.country && (
+          <p className="text-xs text-slate-400 mt-1">{user.country}</p>
+        )}
       </div>
 
       {/* Navigation Menu */}
