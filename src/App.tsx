@@ -18,6 +18,12 @@ import { Members } from "./pages/Members";
 import { AddMember } from "./pages/AddMember";
 import { MemberProfile } from "./pages/MemberProfile";
 import { EditMember } from "./pages/EditMember";
+import { Batches } from "./pages/Batches";
+import { AddBatch } from "./pages/AddBatch";
+import { EditBatch } from "./pages/EditBatch";
+import { Plans } from "./pages/Plans";
+import { AddPlan } from "./pages/AddPlan";
+import { EditPlan } from "./pages/EditPlan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +70,16 @@ const AppRoutes = () => (
     <Route path="/members/add" element={<ProtectedRoute><AddMember /></ProtectedRoute>} />
     <Route path="/members/:id" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
     <Route path="/members/:id/edit" element={<ProtectedRoute><EditMember /></ProtectedRoute>} />
+    
+    {/* Batch routes */}
+    <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
+    <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
+    <Route path="/batches/:id/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
+    
+    {/* Plan routes */}
+    <Route path="/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
+    <Route path="/plans/add" element={<ProtectedRoute><AddPlan /></ProtectedRoute>} />
+    <Route path="/plans/:id/edit" element={<ProtectedRoute><EditPlan /></ProtectedRoute>} />
     
     {/* Catch-all */}
     <Route path="*" element={<NotFound />} />
