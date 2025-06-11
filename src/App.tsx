@@ -15,6 +15,9 @@ import { VerifyOTP } from "./pages/auth/VerifyOTP";
 // Main pages
 import { Dashboard } from "./pages/Dashboard";
 import { Members } from "./pages/Members";
+import { AddMember } from "./pages/AddMember";
+import { MemberProfile } from "./pages/MemberProfile";
+import { EditMember } from "./pages/EditMember";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,11 +56,14 @@ const AppRoutes = () => (
     <Route path="/" element={<Navigate to="/login" replace />} />
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-    <Route path="/verify-otp" element={<PublicRoute><VerifyOTP /></PublicRoute>} />
+    <Route path="/verify-otp" element={<PublicRoute><VerifyOTP /></VerifyOTP>} />
     
     {/* Protected routes */}
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
+    <Route path="/members/add" element={<ProtectedRoute><AddMember /></ProtectedRoute>} />
+    <Route path="/members/:id" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
+    <Route path="/members/:id/edit" element={<ProtectedRoute><EditMember /></ProtectedRoute>} />
     
     {/* Catch-all */}
     <Route path="*" element={<NotFound />} />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Plus, Eye, Edit, Download } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
+import { toast } from '@/hooks/use-toast';
 
 interface Member {
   id: string;
@@ -38,6 +38,24 @@ export const Members = () => {
       }
     } catch (error) {
       console.error('Error fetching members:', error);
+    }
+  };
+
+  const deleteMember = async (memberId: string) => {
+    try {
+      const response = await apiCall(`/members/${memberId}`, {
+        method: 'DELETE'
+      });
+
+      if (response) {
+        toast({
+          title: "Success",
+          description: "Member deleted successfully",
+        });
+        fetchMembers(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting member:', error);
     }
   };
 
