@@ -33,8 +33,8 @@ export const Members = () => {
   const fetchMembers = async () => {
     try {
       const response = await apiCall('/members');
-      if (response?.members) {
-        setMembers(response.members);
+      if (response?.data) {
+        setMembers(response.data);
       }
     } catch (error) {
       console.error('Error fetching members:', error);
