@@ -36,7 +36,11 @@ interface Payment {
 interface Attendance {
   id: string;
   date: string;
-  status: 'present' | 'absent';
+  status: 'present' | 'absent' | 'late';
+  members: {
+    id: string;
+    name: string;
+  };
 }
 
 export const MemberProfile = () => {
@@ -60,12 +64,12 @@ export const MemberProfile = () => {
       const [memberResponse, paymentsResponse, attendanceResponse] = await Promise.all([
         apiCall(`/members/${id}`),
         apiCall(`/members/${id}/payments`),
-        apiCall(`/members/${id}/attendance`)
+        apiCall(`/attendance?member_id=${id}`)
       ]);
 
       if (memberResponse?.member) setMember(memberResponse.member);
       if (paymentsResponse?.payments) setPayments(paymentsResponse.payments);
-      if (attendanceResponse?.attendance) setAttendance(attendanceResponse.attendance);
+      if (attendanceResponse?.data) setAttendance(attendanceResponse.data);
     } catch (error) {
       console.error('Error fetching member data:', error);
     }
@@ -194,6 +198,8 @@ export const MemberProfile = () => {
               <div className="flex items-center gap-2">
                 {todayAttendance.status === 'present' ? (
                   <CheckCircle className="w-5 h-5 text-green-500" />
+                ) : todayAttendance.status === 'late' ? (
+                  <XCircle className="w-5 h-5 text-yellow-500" />
                 ) : (
                   <XCircle className="w-5 h-5 text-red-500" />
                 )}
@@ -294,7 +300,18 @@ export const MemberProfile = () => {
                     <TableRow key={record.id}>
                       <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <Badge variant={record.status === 'present' ? 'default' : 'secondary'}>
+                        <Badge 
+                          variant={
+                            record.status === 'present' ? 'default' : 
+                            record.status === 'late' ? 'secondary' : 
+                            'destructive'
+                          }
+                          className={
+                            record.status === 'present' ? 'bg-green-500' :
+                            record.status === 'late' ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }
+                        >
                           {record.status}
                         </Badge>
                       </TableCell>
