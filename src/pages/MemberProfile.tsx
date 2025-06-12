@@ -52,6 +52,7 @@ export const MemberProfile = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -73,11 +74,35 @@ export const MemberProfile = () => {
       console.log('Payments response:', paymentsResponse);
       console.log('Attendance response:', attendanceResponse);
 
-      if (memberResponse?.member) setMember(memberResponse.member);
-      if (paymentsResponse?.payments) setPayments(paymentsResponse.payments);
-      if (attendanceResponse?.data) setAttendance(attendanceResponse.data);
+      // Handle member data
+      if (memberResponse?.success && memberResponse?.data) {
+        setMember(memberResponse.data);
+      } else if (memberResponse?.member) {
+        setMember(memberResponse.member);
+      }
+
+      // Handle payments data
+      if (paymentsResponse?.success && paymentsResponse?.data) {
+        setPayments(paymentsResponse.data);
+      } else if (paymentsResponse?.payments) {
+        setPayments(paymentsResponse.payments);
+      } else {
+        setPayments([]);
+      }
+
+      // Handle attendance data
+      if (attendanceResponse?.success && attendanceResponse?.data) {
+        setAttendance(attendanceResponse.data);
+      } else if (attendanceResponse?.data) {
+        setAttendance(attendanceResponse.data);
+      } else {
+        setAttendance([]);
+      }
+
+      setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching member data:', error);
+      setDataLoaded(true);
       toast({
         title: "Error",
         description: "Failed to load member data",
@@ -142,10 +167,22 @@ export const MemberProfile = () => {
     }
   };
 
-  if (!member) {
+  if (!dataLoaded) {
     return (
       <div className="text-center py-8">
         <div className="text-lg">Loading member profile...</div>
+      </div>
+    );
+  }
+
+  if (!member) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-lg">Member not found</div>
+        <Button variant="outline" onClick={() => navigate('/members')} className="mt-4">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Members
+        </Button>
       </div>
     );
   }
@@ -273,9 +310,9 @@ export const MemberProfile = () => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Payment History</CardTitle>
-                <Button size="sm">
+                <Button size="sm" onClick={() => navigate('/payments')}>
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Add Payment
+                  Manage Payments
                 </Button>
               </div>
             </CardHeader>
@@ -292,16 +329,24 @@ export const MemberProfile = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                      <TableCell>{getCurrencySymbol()}{payment.amount_paid}</TableCell>
-                      <TableCell>{getCurrencySymbol()}{payment.total_amount}</TableCell>
-                      <TableCell>{getCurrencySymbol()}{payment.due_amount}</TableCell>
-                      <TableCell className="capitalize">{payment.payment_method}</TableCell>
-                      <TableCell>{payment.notes || '-'}</TableCell>
+                  {payments.length > 0 ? (
+                    payments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                        <TableCell>{getCurrencySymbol()}{payment.amount_paid}</TableCell>
+                        <TableCell>{getCurrencySymbol()}{payment.total_amount}</TableCell>
+                        <TableCell>{getCurrencySymbol()}{payment.due_amount}</TableCell>
+                        <TableCell className="capitalize">{payment.payment_method}</TableCell>
+                        <TableCell>{payment.notes || '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4">
+                        No payment records found
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -322,27 +367,35 @@ export const MemberProfile = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {attendance.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            record.status === 'present' ? 'default' : 
-                            record.status === 'late' ? 'secondary' : 
-                            'destructive'
-                          }
-                          className={
-                            record.status === 'present' ? 'bg-green-500' :
-                            record.status === 'late' ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }
-                        >
-                          {record.status}
-                        </Badge>
+                  {attendance.length > 0 ? (
+                    attendance.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              record.status === 'present' ? 'default' : 
+                              record.status === 'late' ? 'secondary' : 
+                              'destructive'
+                            }
+                            className={
+                              record.status === 'present' ? 'bg-green-500' :
+                              record.status === 'late' ? 'bg-yellow-500' :
+                              'bg-red-500'
+                            }
+                          >
+                            {record.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center py-4">
+                        No attendance records found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
