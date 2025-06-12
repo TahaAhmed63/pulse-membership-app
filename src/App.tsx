@@ -24,7 +24,7 @@ import { EditBatch } from "./pages/EditBatch";
 import { Plans } from "./pages/Plans";
 import { AddPlan } from "./pages/AddPlan";
 import { EditPlan } from "./pages/EditPlan";
-import { Payments } from "./pages/Payments";
+import Payments from "./pages/Payments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
