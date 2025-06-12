@@ -61,17 +61,28 @@ export const MemberProfile = () => {
 
   const fetchMemberData = async () => {
     try {
+      console.log('Fetching member data for ID:', id);
+      
       const [memberResponse, paymentsResponse, attendanceResponse] = await Promise.all([
         apiCall(`/members/${id}`),
         apiCall(`/members/${id}/payments`),
         apiCall(`/attendance?member_id=${id}`)
       ]);
 
+      console.log('Member response:', memberResponse);
+      console.log('Payments response:', paymentsResponse);
+      console.log('Attendance response:', attendanceResponse);
+
       if (memberResponse?.member) setMember(memberResponse.member);
       if (paymentsResponse?.payments) setPayments(paymentsResponse.payments);
       if (attendanceResponse?.data) setAttendance(attendanceResponse.data);
     } catch (error) {
       console.error('Error fetching member data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load member data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -82,6 +93,8 @@ export const MemberProfile = () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       
+      console.log('Marking attendance:', { member_id: id, date: today, status });
+      
       const response = await apiCall('/attendance', {
         method: 'POST',
         body: JSON.stringify({
@@ -90,6 +103,8 @@ export const MemberProfile = () => {
           status
         })
       });
+
+      console.log('Attendance response:', response);
 
       if (response) {
         toast({
@@ -100,6 +115,11 @@ export const MemberProfile = () => {
       }
     } catch (error) {
       console.error('Error marking attendance:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark attendance",
+        variant: "destructive",
+      });
     } finally {
       setLoadingAttendance(false);
     }
@@ -107,12 +127,18 @@ export const MemberProfile = () => {
 
   const exportReport = async (type: string) => {
     try {
+      console.log('Exporting report:', type);
       const response = await apiCall(`/members/${id}/export/${type}`);
       if (response?.downloadUrl) {
         window.open(response.downloadUrl, '_blank');
       }
     } catch (error) {
       console.error('Error exporting report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export report",
+        variant: "destructive",
+      });
     }
   };
 
