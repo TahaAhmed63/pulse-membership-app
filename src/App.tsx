@@ -24,6 +24,7 @@ import { EditBatch } from "./pages/EditBatch";
 import { Plans } from "./pages/Plans";
 import { AddPlan } from "./pages/AddPlan";
 import { EditPlan } from "./pages/EditPlan";
+import { Payments } from "./pages/Payments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,9 @@ const AppRoutes = () => (
     <Route path="/members/add" element={<ProtectedRoute><AddMember /></ProtectedRoute>} />
     <Route path="/members/:id" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
     <Route path="/members/:id/edit" element={<ProtectedRoute><EditMember /></ProtectedRoute>} />
+    
+    {/* Payment routes */}
+    <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
     
     {/* Batch routes */}
     <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />

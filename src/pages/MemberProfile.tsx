@@ -46,13 +46,13 @@ interface Attendance {
 export const MemberProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { apiCall, loading } = useApi();
+  const { apiCall } = useApi();
   const { getCurrencySymbol } = useAuth();
   const [member, setMember] = useState<Member | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
@@ -61,6 +61,7 @@ export const MemberProfile = () => {
   }, [id]);
 
   const fetchMemberData = async () => {
+    setLoading(true);
     try {
       console.log('Fetching member data for ID:', id);
       
@@ -98,16 +99,15 @@ export const MemberProfile = () => {
       } else {
         setAttendance([]);
       }
-
-      setDataLoaded(true);
     } catch (error) {
       console.error('Error fetching member data:', error);
-      setDataLoaded(true);
       toast({
         title: "Error",
         description: "Failed to load member data",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,7 +167,7 @@ export const MemberProfile = () => {
     }
   };
 
-  if (!dataLoaded) {
+  if (loading) {
     return (
       <div className="text-center py-8">
         <div className="text-lg">Loading member profile...</div>

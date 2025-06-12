@@ -15,6 +15,9 @@ export const useApi = () => {
     try {
       const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
       
+      console.log('Making API call to:', url);
+      console.log('With token:', token ? 'Present' : 'Missing');
+      
       const response = await fetch(url, {
         ...options,
         headers: {
@@ -24,7 +27,10 @@ export const useApi = () => {
         },
       });
 
+      console.log('API Response status:', response.status);
+
       if (response.status === 401) {
+        console.log('401 Unauthorized - logging out');
         logout();
         toast({
           title: "Session Expired",
@@ -34,12 +40,15 @@ export const useApi = () => {
         return null;
       }
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      const data = await response.json();
+      console.log('API Response data:', data);
+      
       return data;
     } catch (error: any) {
       console.error('API Error:', error);
