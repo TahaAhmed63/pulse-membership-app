@@ -65,7 +65,7 @@ export const MemberProfile = () => {
       
       const [memberResponse, paymentsResponse, attendanceResponse] = await Promise.all([
         apiCall(`/members/${id}`),
-        apiCall(`/members/${id}/payments`),
+        apiCall(`/payments/member/${id}`),
         apiCall(`/attendance?member_id=${id}`)
       ]);
 
@@ -128,7 +128,7 @@ export const MemberProfile = () => {
   const exportReport = async (type: string) => {
     try {
       console.log('Exporting report:', type);
-      const response = await apiCall(`/members/${id}/export/${type}`);
+      const response = await apiCall(`/reports/download/${type}?member_id=${id}`);
       if (response?.downloadUrl) {
         window.open(response.downloadUrl, '_blank');
       }
@@ -357,7 +357,7 @@ export const MemberProfile = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" onClick={() => exportReport('full')}>
+                <Button variant="outline" onClick={() => exportReport('members')}>
                   <Download className="w-4 h-4 mr-2" />
                   Full Member Report
                 </Button>
@@ -369,9 +369,9 @@ export const MemberProfile = () => {
                   <Download className="w-4 h-4 mr-2" />
                   Attendance Report
                 </Button>
-                <Button variant="outline" onClick={() => exportReport('partial-payments')}>
+                <Button variant="outline" onClick={() => exportReport('financial-summary')}>
                   <Download className="w-4 h-4 mr-2" />
-                  Partial Payment Report
+                  Financial Summary
                 </Button>
               </div>
             </CardContent>
