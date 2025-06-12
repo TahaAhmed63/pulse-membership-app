@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: string;
@@ -21,6 +21,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   getCurrencySymbol: () => string;
+  refreshToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,23 +133,107 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
   const getCurrencySymbol = () => {
     if (user?.country && currencyMap[user.country]) {
       return currencyMap[user.country];
     }
     return '$'; // Default to USD
   };
+
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const storedRefreshToken = localStorage.getItem('refresh_token');
+      if (!storedRefreshToken) {
+        console.log('No refresh token available');
+        return false;
+      }
+
+      console.log('Attempting to refresh token...');
+      const response = await fetch('https://gymbackend-eight.vercel.app/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: storedRefreshToken }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success && result.data) {
+        const { data } = result;
+        const newAccessToken = data.session.access_token;
+        const newRefreshToken = data.session.refresh_token;
+        const expiresAt = data.session.expires_at;
+
+        setToken(newAccessToken);
+        localStorage.setItem('token', newAccessToken);
+        localStorage.setItem('refresh_token', newRefreshToken);
+        localStorage.setItem('token_expires_at', expiresAt.toString());
+        
+        console.log('Token refreshed successfully');
+        return true;
+      } else {
+        console.log('Token refresh failed:', result.message);
+        return false;
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return false;
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('token_expires_at');
+    localStorage.removeItem('user');
+    console.log('User logged out');
+  }, []);
+
+  const checkTokenExpiration = useCallback(async () => {
+    const expiresAt = localStorage.getItem('token_expires_at');
+    if (!expiresAt) return;
+
+    const expirationTime = parseInt(expiresAt) * 1000; // Convert to milliseconds
+    const now = Date.now();
+    const timeUntilExpiry = expirationTime - now;
+
+    // If token expires in less than 5 minutes, try to refresh
+    if (timeUntilExpiry < 5 * 60 * 1000) {
+      console.log('Token expiring soon, attempting refresh...');
+      const refreshed = await refreshToken();
+      if (!refreshed) {
+        console.log('Failed to refresh token, logging out');
+        logout();
+      }
+    }
+  }, [refreshToken, logout]);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      const storedRefreshToken = localStorage.getItem('refresh_token');
+      
+      if (storedToken && storedUser && storedRefreshToken) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        
+        // Check if token needs refresh
+        await checkTokenExpiration();
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+
+    // Set up periodic token expiration check (every 5 minutes)
+    const interval = setInterval(checkTokenExpiration, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [checkTokenExpiration]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -170,12 +255,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Handle the correct API response structure
       const { data } = result;
       const userToken = data.session.access_token;
+      const userRefreshToken = data.session.refresh_token;
+      const expiresAt = data.session.expires_at;
       const userData = data.user;
 
       setToken(userToken);
       setUser(userData);
       localStorage.setItem('token', userToken);
+      localStorage.setItem('refresh_token', userRefreshToken);
+      localStorage.setItem('token_expires_at', expiresAt.toString());
       localStorage.setItem('user', JSON.stringify(userData));
+
+      console.log('Login successful, tokens stored');
     } catch (error) {
       throw error;
     } finally {
@@ -228,24 +319,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Handle the correct API response structure for OTP verification
       const { data } = result;
       const userToken = data.session.access_token;
+      const userRefreshToken = data.session.refresh_token;
+      const expiresAt = data.session.expires_at;
       const userData = data.user;
 
       setToken(userToken);
       setUser(userData);
       localStorage.setItem('token', userToken);
+      localStorage.setItem('refresh_token', userRefreshToken);
+      localStorage.setItem('token_expires_at', expiresAt.toString());
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       throw error;
     } finally {
       setLoading(false);
     }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
   };
 
   return (
@@ -257,7 +345,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       verifyOTP,
       logout,
       loading,
-      getCurrencySymbol
+      getCurrencySymbol,
+      refreshToken
     }}>
       {children}
     </AuthContext.Provider>

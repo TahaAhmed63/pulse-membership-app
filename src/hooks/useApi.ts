@@ -7,7 +7,7 @@ const API_BASE = 'https://gymbackend-eight.vercel.app/api';
 
 export const useApi = () => {
   const [loading, setLoading] = useState(false);
-  const { token, logout } = useAuth();
+  const { token, logout, refreshToken } = useAuth();
 
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     setLoading(true);
@@ -18,26 +18,47 @@ export const useApi = () => {
       console.log('Making API call to:', url);
       console.log('With token:', token ? 'Present' : 'Missing');
       
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-          ...options.headers,
-        },
-      });
+      let currentToken = token;
+      
+      const makeRequest = async (authToken: string | null) => {
+        return await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authToken && { Authorization: `Bearer ${authToken}` }),
+            ...options.headers,
+          },
+        });
+      };
+
+      let response = await makeRequest(currentToken);
 
       console.log('API Response status:', response.status);
 
-      if (response.status === 401) {
-        console.log('401 Unauthorized - logging out');
-        logout();
-        toast({
-          title: "Session Expired",
-          description: "Please login again.",
-          variant: "destructive",
-        });
-        return null;
+      // If we get a 401, try to refresh the token once
+      if (response.status === 401 && currentToken) {
+        console.log('401 Unauthorized - attempting token refresh');
+        const refreshed = await refreshToken();
+        
+        if (refreshed) {
+          // Get the new token from localStorage since refreshToken updates it
+          const newToken = localStorage.getItem('token');
+          console.log('Token refreshed, retrying request with new token');
+          response = await makeRequest(newToken);
+          console.log('Retry API Response status:', response.status);
+        }
+        
+        // If still 401 after refresh attempt, logout
+        if (response.status === 401) {
+          console.log('Still 401 after refresh - logging out');
+          logout();
+          toast({
+            title: "Session Expired",
+            description: "Please login again.",
+            variant: "destructive",
+          });
+          return null;
+        }
       }
 
       if (!response.ok) {
