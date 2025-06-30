@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,137 +7,50 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Edit, Calendar, DollarSign, Download, CheckCircle, XCircle } from 'lucide-react';
-import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-
-interface Member {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  dob: string;
-  gender: string;
-  join_date: string;
-  status: 'active' | 'inactive';
-  plan_end_date: string;
-}
-
-interface Payment {
-  id: string;
-  amount_paid: number;
-  total_amount: number;
-  due_amount: number;
-  payment_date: string;
-  payment_method: string;
-  notes: string;
-}
-
-interface Attendance {
-  id: string;
-  date: string;
-  status: 'present' | 'absent' | 'late';
-  members: {
-    id: string;
-    name: string;
-  };
-}
+import { 
+  useGetMemberQuery, 
+  useGetMemberPaymentsQuery, 
+  useGetAttendanceQuery, 
+  useRecordAttendanceMutation 
+} from '@/store/api/apiSlice';
 
 export const MemberProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { apiCall } = useApi();
   const { getCurrencySymbol } = useAuth();
-  const [member, setMember] = useState<Member | null>(null);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [attendance, setAttendance] = useState<Attendance[]>([]);
-  const [loadingAttendance, setLoadingAttendance] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchMemberData();
-    }
-  }, [id]);
+  // Use Redux Toolkit queries
+  const { data: memberData, isLoading: memberLoading } = useGetMemberQuery(id!);
+  const { data: paymentsData, isLoading: paymentsLoading } = useGetMemberPaymentsQuery(id!);
+  const { data: attendanceData, isLoading: attendanceLoading } = useGetAttendanceQuery({ member_id: id });
+  
+  // Mutation for marking attendance
+  const [recordAttendance, { isLoading: loadingAttendance }] = useRecordAttendanceMutation();
 
-  const fetchMemberData = async () => {
-    setLoading(true);
-    try {
-      console.log('Fetching member data for ID:', id);
-      
-      const [memberResponse, paymentsResponse, attendanceResponse] = await Promise.all([
-        apiCall(`/members/${id}`),
-        apiCall(`/payments/member/${id}`),
-        apiCall(`/attendance?member_id=${id}`)
-      ]);
-
-      console.log('Member response:', memberResponse);
-      console.log('Payments response:', paymentsResponse);
-      console.log('Attendance response:', attendanceResponse);
-
-      // Handle member data
-      if (memberResponse?.success && memberResponse?.data) {
-        setMember(memberResponse.data);
-      } else if (memberResponse?.member) {
-        setMember(memberResponse.member);
-      }
-
-      // Handle payments data
-      if (paymentsResponse?.success && paymentsResponse?.data) {
-        setPayments(paymentsResponse.data);
-      } else if (paymentsResponse?.payments) {
-        setPayments(paymentsResponse.payments);
-      } else {
-        setPayments([]);
-      }
-
-      // Handle attendance data
-      if (attendanceResponse?.success && attendanceResponse?.data) {
-        setAttendance(attendanceResponse.data);
-      } else if (attendanceResponse?.data) {
-        setAttendance(attendanceResponse.data);
-      } else {
-        setAttendance([]);
-      }
-    } catch (error) {
-      console.error('Error fetching member data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load member data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const member = memberData?.data || memberData?.member;
+  const payments = paymentsData?.data || paymentsData?.payments || [];
+  const attendance = attendanceData?.data || [];
 
   const markAttendance = async (status: 'present' | 'absent') => {
     if (!id) return;
 
-    setLoadingAttendance(true);
     try {
       const today = new Date().toISOString().split('T')[0];
       
       console.log('Marking attendance:', { member_id: id, date: today, status });
       
-      const response = await apiCall('/attendance', {
-        method: 'POST',
-        body: JSON.stringify({
-          member_id: id,
-          date: today,
-          status
-        })
+      await recordAttendance({
+        member_id: id,
+        date: today,
+        status
+      }).unwrap();
+
+      toast({
+        title: "Success",
+        description: `Attendance marked as ${status}`,
       });
-
-      console.log('Attendance response:', response);
-
-      if (response) {
-        toast({
-          title: "Success",
-          description: `Attendance marked as ${status}`,
-        });
-        fetchMemberData(); // Refresh data
-      }
     } catch (error) {
       console.error('Error marking attendance:', error);
       toast({
@@ -145,18 +58,17 @@ export const MemberProfile = () => {
         description: "Failed to mark attendance",
         variant: "destructive",
       });
-    } finally {
-      setLoadingAttendance(false);
     }
   };
 
   const exportReport = async (type: string) => {
     try {
       console.log('Exporting report:', type);
-      const response = await apiCall(`/reports/download/${type}?member_id=${id}`);
-      if (response?.downloadUrl) {
-        window.open(response.downloadUrl, '_blank');
-      }
+      // This would need to be implemented in the backend
+      toast({
+        title: "Info",
+        description: "Export functionality needs backend implementation",
+      });
     } catch (error) {
       console.error('Error exporting report:', error);
       toast({
@@ -167,7 +79,7 @@ export const MemberProfile = () => {
     }
   };
 
-  if (loading) {
+  if (memberLoading || paymentsLoading || attendanceLoading) {
     return (
       <div className="text-center py-8">
         <div className="text-lg">Loading member profile...</div>
@@ -187,7 +99,7 @@ export const MemberProfile = () => {
     );
   }
 
-  const todayAttendance = attendance.find(a => a.date === new Date().toISOString().split('T')[0]);
+  const todayAttendance = attendance.find((a: any) => a.date === new Date().toISOString().split('T')[0]);
 
   return (
     <div className="space-y-6">
@@ -330,7 +242,7 @@ export const MemberProfile = () => {
                 </TableHeader>
                 <TableBody>
                   {payments.length > 0 ? (
-                    payments.map((payment) => (
+                    payments.map((payment: any) => (
                       <TableRow key={payment.id}>
                         <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
                         <TableCell>{getCurrencySymbol()}{payment.amount_paid}</TableCell>
@@ -368,7 +280,7 @@ export const MemberProfile = () => {
                 </TableHeader>
                 <TableBody>
                   {attendance.length > 0 ? (
-                    attendance.map((record) => (
+                    attendance.map((record: any) => (
                       <TableRow key={record.id}>
                         <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                         <TableCell>

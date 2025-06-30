@@ -1,77 +1,54 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, UserX, DollarSign, Calendar } from 'lucide-react';
-import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface DashboardStats {
-  totalActiveMembers: number;
-  totalInactiveMembers: number;
-  totalPayments: number;
-  todayAttendance: number;
-}
+import { 
+  useGetMembersQuery, 
+  useGetPaymentsQuery, 
+  useGetAttendanceQuery 
+} from '@/store/api/apiSlice';
 
 export const Dashboard = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalActiveMembers: 0,
-    totalInactiveMembers: 0,
-    totalPayments: 0,
-    todayAttendance: 0,
-  });
-  const [paymentTrends, setPaymentTrends] = useState([]);
-  const { apiCall, loading } = useApi();
   const { getCurrencySymbol } = useAuth();
+  
+  // Use Redux Toolkit queries
+  const { data: membersData, isLoading: membersLoading } = useGetMembersQuery({});
+  const { data: paymentsData, isLoading: paymentsLoading } = useGetPaymentsQuery({});
+  
+  // Get today's attendance using the correct endpoint
+  const today = new Date().toISOString().split('T')[0];
+  const { data: attendanceData, isLoading: attendanceLoading } = useGetAttendanceQuery({ date: today });
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  // Calculate stats from the data
+  const stats = useMemo(() => {
+    const members = membersData?.members || [];
+    const payments = paymentsData?.data || [];
+    const attendance = attendanceData?.data || [];
 
-  const fetchDashboardData = async () => {
-    try {
-      // Fetch members
-      const membersResponse = await apiCall('/members');
-      if (membersResponse?.members) {
-        const activeMembers = membersResponse.members.filter((m: any) => m.status === 'active').length;
-        const inactiveMembers = membersResponse.members.filter((m: any) => m.status === 'inactive').length;
-        
-        setStats(prev => ({
-          ...prev,
-          totalActiveMembers: activeMembers,
-          totalInactiveMembers: inactiveMembers,
-        }));
-      }
+    const activeMembers = members.filter((m: any) => m.status === 'active').length;
+    const inactiveMembers = members.filter((m: any) => m.status === 'inactive').length;
+    const totalPayments = payments.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount_paid), 0);
+    const todayAttendance = attendance.filter((a: any) => a.status === 'present').length;
 
-      // Fetch payments
-      const paymentsResponse = await apiCall('/payments');
-      if (paymentsResponse?.payments) {
-        const totalPayments = paymentsResponse.payments.reduce((sum: number, payment: any) => sum + parseFloat(payment.amount_paid), 0);
-        setStats(prev => ({ ...prev, totalPayments }));
-        
-        // Process payment trends
-        const monthlyData = processPaymentTrends(paymentsResponse.payments);
-        setPaymentTrends(monthlyData);
-      }
+    return {
+      totalActiveMembers: activeMembers,
+      totalInactiveMembers: inactiveMembers,
+      totalPayments,
+      todayAttendance,
+    };
+  }, [membersData, paymentsData, attendanceData]);
 
-      // Fetch today's attendance
-      const attendanceResponse = await apiCall('/attendance/today');
-      if (attendanceResponse?.attendance) {
-        setStats(prev => ({ 
-          ...prev, 
-          todayAttendance: attendanceResponse.attendance.filter((a: any) => a.status === 'present').length 
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    }
-  };
-
-  const processPaymentTrends = (payments: any[]) => {
+  // Process payment trends
+  const paymentTrends = useMemo(() => {
+    if (!paymentsData?.data) return [];
+    
+    const payments = paymentsData.data;
     const monthlyData: { [key: string]: number } = {};
     
-    payments.forEach(payment => {
+    payments.forEach((payment: any) => {
       const date = new Date(payment.payment_date);
       const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
       monthlyData[monthKey] = (monthlyData[monthKey] || 0) + parseFloat(payment.amount_paid);
@@ -84,14 +61,12 @@ export const Dashboard = () => {
       }))
       .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
       .slice(-6); // Last 6 months
-  };
+  }, [paymentsData]);
 
   const exportActiveMembers = async () => {
     try {
-      const response = await apiCall('/members/export/active');
-      if (response?.downloadUrl) {
-        window.open(response.downloadUrl, '_blank');
-      }
+      // This would need to be implemented in the backend
+      console.log('Export active members functionality needs backend implementation');
     } catch (error) {
       console.error('Error exporting active members:', error);
     }
@@ -99,16 +74,15 @@ export const Dashboard = () => {
 
   const exportInactiveMembers = async () => {
     try {
-      const response = await apiCall('/members/export/inactive');
-      if (response?.downloadUrl) {
-        window.open(response.downloadUrl, '_blank');
-      }
+      // This would need to be implemented in the backend
+      console.log('Export inactive members functionality needs backend implementation');
     } catch (error) {
       console.error('Error exporting inactive members:', error);
     }
   };
 
   const currencySymbol = getCurrencySymbol();
+  const isLoading = membersLoading || paymentsLoading || attendanceLoading;
 
   const statCards = [
     {
@@ -140,6 +114,14 @@ export const Dashboard = () => {
       bgColor: 'bg-purple-50',
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-lg">Loading dashboard...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
