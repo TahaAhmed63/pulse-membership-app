@@ -14,9 +14,9 @@ import {
 export const Dashboard = () => {
   const { getCurrencySymbol } = useAuth();
   
-  // Use Redux Toolkit queries
-  const { data: membersData, isLoading: membersLoading } = useGetMembersQuery({});
-  const { data: paymentsData, isLoading: paymentsLoading } = useGetPaymentsQuery({});
+  // Use Redux Toolkit queries - fix the parameter passing
+  const { data: membersData, isLoading: membersLoading } = useGetMembersQuery();
+  const { data: paymentsData, isLoading: paymentsLoading } = useGetPaymentsQuery();
   
   // Get today's attendance using the correct endpoint
   const today = new Date().toISOString().split('T')[0];
