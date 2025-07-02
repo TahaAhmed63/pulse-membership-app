@@ -25,7 +25,7 @@ export const apiSlice = createApi({
     }),
     getMember: builder.query<any, string>({
       query: (id) => `/members/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Member', id }],
+      providesTags: ['Member'],
     }),
     
     // Payments endpoints
@@ -35,7 +35,7 @@ export const apiSlice = createApi({
     }),
     getMemberPayments: builder.query<any, string>({
       query: (memberId) => `/payments/member/${memberId}`,
-      providesTags: (result, error, memberId) => [{ type: 'Payment', id: memberId }],
+      providesTags: ['Payment'],
     }),
     
     // Attendance endpoints
