@@ -19,27 +19,27 @@ export const apiSlice = createApi({
   tagTypes: ['Member', 'Payment', 'Attendance', 'Batch', 'Plan'],
   endpoints: (builder) => ({
     // Members endpoints
-    getMembers: builder.query({
+    getMembers: builder.query<any, void>({
       query: () => '/members',
       providesTags: ['Member'],
     }),
-    getMember: builder.query({
+    getMember: builder.query<any, string>({
       query: (id) => `/members/${id}`,
       providesTags: (result, error, id) => [{ type: 'Member', id }],
     }),
     
     // Payments endpoints
-    getPayments: builder.query({
+    getPayments: builder.query<any, void>({
       query: () => '/payments',
       providesTags: ['Payment'],
     }),
-    getMemberPayments: builder.query({
+    getMemberPayments: builder.query<any, string>({
       query: (memberId) => `/payments/member/${memberId}`,
       providesTags: (result, error, memberId) => [{ type: 'Payment', id: memberId }],
     }),
     
     // Attendance endpoints
-    getAttendance: builder.query({
+    getAttendance: builder.query<any, Record<string, any> | void>({
       query: (params) => {
         if (!params) return '/attendance';
         const searchParams = new URLSearchParams();
@@ -50,7 +50,7 @@ export const apiSlice = createApi({
       },
       providesTags: ['Attendance'],
     }),
-    recordAttendance: builder.mutation({
+    recordAttendance: builder.mutation<any, any>({
       query: (data) => ({
         url: '/attendance',
         method: 'POST',
@@ -60,13 +60,13 @@ export const apiSlice = createApi({
     }),
     
     // Batches endpoints
-    getBatches: builder.query({
+    getBatches: builder.query<any, void>({
       query: () => '/batches',
       providesTags: ['Batch'],
     }),
     
     // Plans endpoints
-    getPlans: builder.query({
+    getPlans: builder.query<any, void>({
       query: () => '/plans',
       providesTags: ['Plan'],
     }),
