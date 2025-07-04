@@ -67,7 +67,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Navigate to="/login" replace />} />
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-    <Route path="/verify-otp" element={<PublicRoute><VerifyOTP /></VerifyOTP>} />
+    <Route path="/verify-otp" element={<PublicRoute><VerifyOTP /></PublicRoute>} />
     
     {/* Protected routes with permission checks */}
     <Route path="/dashboard" element={<AuthenticatedRoute><Dashboard /></AuthenticatedRoute>} />
