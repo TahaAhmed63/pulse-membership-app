@@ -1,6 +1,5 @@
 
-import { useContext } from 'react';
-import { AuthContext } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * useRolePermissions - React hook to check user/staff permissions throughout the app
@@ -10,7 +9,7 @@ import { AuthContext } from '@/contexts/AuthContext';
  *   if (hasPermission('view_reports')) { ... }
  */
 export function useRolePermissions() {
-  const { user } = useContext(AuthContext) as any;
+  const { user } = useAuth();
 
   return (perm: string) => {
     if (user?.role === 'admin') return true;
