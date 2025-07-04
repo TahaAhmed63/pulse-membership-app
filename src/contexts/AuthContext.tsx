@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface User {
@@ -10,6 +9,9 @@ interface User {
   gym_name?: string;
   country?: string;
   gym_id: string;
+  staff?: {
+    permissions: string[];
+  };
 }
 
 interface AuthContextType {
