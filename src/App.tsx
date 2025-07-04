@@ -8,6 +8,7 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { MainLayout } from "./components/Layout/MainLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Auth pages
 import { Login } from "./pages/auth/Login";
@@ -28,10 +29,11 @@ import { AddPlan } from "./pages/AddPlan";
 import { EditPlan } from "./pages/EditPlan";
 import Payments from "./pages/Payments";
 import NotFound from "./pages/NotFound";
+import { NotAuthorized } from "./pages/NotAuthorized";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const AuthenticatedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
@@ -65,27 +67,98 @@ const AppRoutes = () => (
     <Route path="/" element={<Navigate to="/login" replace />} />
     <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
     <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-    <Route path="/verify-otp" element={<PublicRoute><VerifyOTP /></PublicRoute>} />
+    <Route path="/verify-otp" element={<PublicRoute><VerifyOTP /></VerifyOTP>} />
     
-    {/* Protected routes */}
-    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
-    <Route path="/members/add" element={<ProtectedRoute><AddMember /></ProtectedRoute>} />
-    <Route path="/members/:id" element={<ProtectedRoute><MemberProfile /></ProtectedRoute>} />
-    <Route path="/members/:id/edit" element={<ProtectedRoute><EditMember /></ProtectedRoute>} />
+    {/* Protected routes with permission checks */}
+    <Route path="/dashboard" element={<AuthenticatedRoute><Dashboard /></AuthenticatedRoute>} />
     
-    {/* Payment routes */}
-    <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+    {/* Member management routes - require edit_members permission */}
+    <Route path="/members" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="edit_members">
+          <Members />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/members/add" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="edit_members">
+          <AddMember />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/members/:id" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="edit_members">
+          <MemberProfile />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/members/:id/edit" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="edit_members">
+          <EditMember />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
     
-    {/* Batch routes */}
-    <Route path="/batches" element={<ProtectedRoute><Batches /></ProtectedRoute>} />
-    <Route path="/batches/add" element={<ProtectedRoute><AddBatch /></ProtectedRoute>} />
-    <Route path="/batches/:id/edit" element={<ProtectedRoute><EditBatch /></ProtectedRoute>} />
+    {/* Payment routes - require manage_payments permission */}
+    <Route path="/payments" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_payments">
+          <Payments />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
     
-    {/* Plan routes */}
-    <Route path="/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
-    <Route path="/plans/add" element={<ProtectedRoute><AddPlan /></ProtectedRoute>} />
-    <Route path="/plans/:id/edit" element={<ProtectedRoute><EditPlan /></ProtectedRoute>} />
+    {/* Batch routes - require manage_batches permission */}
+    <Route path="/batches" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_batches">
+          <Batches />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/batches/add" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_batches">
+          <AddBatch />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/batches/:id/edit" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_batches">
+          <EditBatch />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    
+    {/* Plan routes - require manage_plans permission */}
+    <Route path="/plans" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_plans">
+          <Plans />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/plans/add" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_plans">
+          <AddPlan />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    <Route path="/plans/:id/edit" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="manage_plans">
+          <EditPlan />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    
+    {/* Access denied page */}
+    <Route path="/not-authorized" element={<AuthenticatedRoute><NotAuthorized /></AuthenticatedRoute>} />
     
     {/* Catch-all */}
     <Route path="*" element={<NotFound />} />

@@ -13,22 +13,37 @@ import {
   LogOut
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 
-const menuItems = [
-  { icon: Home, label: 'Dashboard', path: '/dashboard' },
-  { icon: Users, label: 'Members', path: '/members' },
-  { icon: UserPlus, label: 'Add Member', path: '/members/add' },
-  { icon: DollarSign, label: 'Payments', path: '/payments' },
-  { icon: Calendar, label: 'Attendance', path: '/attendance' },
-  { icon: BarChart3, label: 'Plans', path: '/plans' },
-  { icon: Settings, label: 'Batches', path: '/batches' },
-  { icon: FileText, label: 'Expenses', path: '/expenses' },
-  { icon: Users, label: 'Enquiries', path: '/enquiries' },
+interface MenuItem {
+  icon: React.ComponentType<any>;
+  label: string;
+  path: string;
+  permission?: string;
+}
+
+const menuItems: MenuItem[] = [
+  { icon: Home, label: 'Dashboard', path: '/dashboard' }, // No permission required for dashboard
+  { icon: Users, label: 'Members', path: '/members', permission: 'edit_members' },
+  { icon: UserPlus, label: 'Add Member', path: '/members/add', permission: 'edit_members' },
+  { icon: DollarSign, label: 'Payments', path: '/payments', permission: 'manage_payments' },
+  { icon: Calendar, label: 'Attendance', path: '/attendance', permission: 'view_attendance' },
+  { icon: BarChart3, label: 'Plans', path: '/plans', permission: 'manage_plans' },
+  { icon: Settings, label: 'Batches', path: '/batches', permission: 'manage_batches' },
+  { icon: FileText, label: 'Expenses', path: '/expenses', permission: 'manage_expenses' },
+  { icon: Users, label: 'Enquiries', path: '/enquiries', permission: 'view_enquiries' },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const hasPermission = useRolePermissions();
+
+  // Filter menu items based on permissions
+  const visibleMenuItems = menuItems.filter(item => {
+    if (!item.permission) return true; // No permission required
+    return hasPermission(item.permission);
+  });
 
   return (
     <div className="bg-gradient-to-b from-slate-900 to-slate-800 text-white w-64 min-h-screen flex flex-col">
@@ -41,12 +56,15 @@ export const Sidebar = () => {
         {user?.country && (
           <p className="text-xs text-slate-400 mt-1">{user.country}</p>
         )}
+        {user?.role && (
+          <p className="text-xs text-slate-400 mt-1 capitalize">{user.role}</p>
+        )}
       </div>
 
       {/* Navigation Menu */}
       <nav className="flex-1 py-6">
         <ul className="space-y-2 px-4">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             
