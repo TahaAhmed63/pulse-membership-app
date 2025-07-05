@@ -61,9 +61,11 @@ export const Attendance = () => {
       }
 
       if (batchesResponse?.data) {
-        setBatches(batchesResponse.data);
+        // Filter out batches with empty or null IDs
+        setBatches(batchesResponse.data.filter((batch: Batch) => batch.id && batch.id.trim() !== ''));
       } else if (batchesResponse?.batches) {
-        setBatches(batchesResponse.batches);
+        // Filter out batches with empty or null IDs
+        setBatches(batchesResponse.batches.filter((batch: Batch) => batch.id && batch.id.trim() !== ''));
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
@@ -270,7 +272,7 @@ export const Attendance = () => {
                 <SelectContent>
                   <SelectItem value="all">All Batches</SelectItem>
                   {batches.map((batch) => (
-                    <SelectItem key={batch.id} value={batch.id}>
+                    <SelectItem key={batch.id} value={batch.id || 'unknown'}>
                       {batch.name} - {batch.schedule_time}
                     </SelectItem>
                   ))}
