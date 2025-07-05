@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Eye, Edit, Download } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Download, FileDown, Users, UserCheck, UserX } from 'lucide-react';
 import { useApi } from '@/hooks/useApi';
 import { toast } from '@/hooks/use-toast';
 
@@ -59,6 +60,48 @@ export const Members = () => {
     }
   };
 
+  const downloadReport = async (type: string) => {
+    try {
+      const response = await fetch(`https://gymbackend-eight.vercel.app/api/reports/download/${type}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Get the CSV content
+      const csvContent = await response.text();
+      
+      // Create a blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${type}_members_report.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Success",
+        description: `${type} members report downloaded successfully`,
+      });
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download report",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.phone.includes(searchTerm) ||
@@ -69,17 +112,6 @@ export const Members = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const exportMembers = async () => {
-    try {
-      const response = await apiCall('/members/export');
-      if (response?.downloadUrl) {
-        window.open(response.downloadUrl, '_blank');
-      }
-    } catch (error) {
-      console.error('Error exporting members:', error);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -88,10 +120,24 @@ export const Members = () => {
           <p className="text-gray-600 mt-1">Manage your gym members</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportMembers}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" onClick={() => downloadReport('all')}>
+              <Users className="w-4 h-4 mr-1" />
+              All
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadReport('active')}>
+              <UserCheck className="w-4 h-4 mr-1" />
+              Active
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadReport('inactive')}>
+              <UserX className="w-4 h-4 mr-1" />
+              Inactive
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadReport('partial')}>
+              <FileDown className="w-4 h-4 mr-1" />
+              Partial Payment
+            </Button>
+          </div>
           <Button asChild>
             <Link to="/members/add">
               <Plus className="w-4 h-4 mr-2" />
