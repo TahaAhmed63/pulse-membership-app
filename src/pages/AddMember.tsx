@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,21 +54,21 @@ export const AddMember = () => {
       console.log('Plans response:', plansResponse);
       console.log('Batches response:', batchesResponse);
       
-      // Handle different response structures
+      // Handle different response structures and filter out invalid items
       if (plansResponse?.data) {
-        setPlans(plansResponse.data);
+        setPlans(plansResponse.data.filter((plan: Plan) => plan.id && plan.id.trim() !== ''));
       } else if (plansResponse?.plans) {
-        setPlans(plansResponse.plans);
+        setPlans(plansResponse.plans.filter((plan: Plan) => plan.id && plan.id.trim() !== ''));
       } else if (Array.isArray(plansResponse)) {
-        setPlans(plansResponse);
+        setPlans(plansResponse.filter((plan: Plan) => plan.id && plan.id.trim() !== ''));
       }
       
       if (batchesResponse?.data) {
-        setBatches(batchesResponse.data);
+        setBatches(batchesResponse.data.filter((batch: Batch) => batch.id && batch.id.trim() !== ''));
       } else if (batchesResponse?.batches) {
-        setBatches(batchesResponse.batches);
+        setBatches(batchesResponse.batches.filter((batch: Batch) => batch.id && batch.id.trim() !== ''));
       } else if (Array.isArray(batchesResponse)) {
-        setBatches(batchesResponse);
+        setBatches(batchesResponse.filter((batch: Batch) => batch.id && batch.id.trim() !== ''));
       }
     } catch (error) {
       console.error('Error fetching plans and batches:', error);
@@ -215,7 +214,7 @@ export const AddMember = () => {
                         {plan.name} - {plan.duration_in_months} months
                       </SelectItem>
                     )) : (
-                      <SelectItem value="" disabled>No plans available</SelectItem>
+                      <SelectItem value="no-plans" disabled>No plans available</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -233,7 +232,7 @@ export const AddMember = () => {
                         {batch.name} - {batch.schedule_time}
                       </SelectItem>
                     )) : (
-                      <SelectItem value="" disabled>No batches available</SelectItem>
+                      <SelectItem value="no-batches" disabled>No batches available</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
