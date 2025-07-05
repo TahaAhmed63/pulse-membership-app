@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import { Members } from "./pages/Members";
 import { AddMember } from "./pages/AddMember";
 import { MemberProfile } from "./pages/MemberProfile";
 import { EditMember } from "./pages/EditMember";
+import { Attendance } from "./pages/Attendance";
 import { Batches } from "./pages/Batches";
 import { AddBatch } from "./pages/AddBatch";
 import { EditBatch } from "./pages/EditBatch";
@@ -107,6 +107,15 @@ const AppRoutes = () => (
       <AuthenticatedRoute>
         <ProtectedRoute permission="manage_payments">
           <Payments />
+        </ProtectedRoute>
+      </AuthenticatedRoute>
+    } />
+    
+    {/* Attendance routes - require view_attendance permission */}
+    <Route path="/attendance" element={
+      <AuthenticatedRoute>
+        <ProtectedRoute permission="view_attendance">
+          <Attendance />
         </ProtectedRoute>
       </AuthenticatedRoute>
     } />

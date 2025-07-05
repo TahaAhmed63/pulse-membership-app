@@ -52,10 +52,32 @@ export const AddMember = () => {
         apiCall('/batches')
       ]);
       
-      if (plansResponse?.plans) setPlans(plansResponse.plans);
-      if (batchesResponse?.batches) setBatches(batchesResponse.batches);
+      console.log('Plans response:', plansResponse);
+      console.log('Batches response:', batchesResponse);
+      
+      // Handle different response structures
+      if (plansResponse?.data) {
+        setPlans(plansResponse.data);
+      } else if (plansResponse?.plans) {
+        setPlans(plansResponse.plans);
+      } else if (Array.isArray(plansResponse)) {
+        setPlans(plansResponse);
+      }
+      
+      if (batchesResponse?.data) {
+        setBatches(batchesResponse.data);
+      } else if (batchesResponse?.batches) {
+        setBatches(batchesResponse.batches);
+      } else if (Array.isArray(batchesResponse)) {
+        setBatches(batchesResponse);
+      }
     } catch (error) {
       console.error('Error fetching plans and batches:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load plans and batches",
+        variant: "destructive"
+      });
     }
   };
 
@@ -80,6 +102,11 @@ export const AddMember = () => {
       }
     } catch (error) {
       console.error('Error adding member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add member",
+        variant: "destructive"
+      });
     }
   };
 
@@ -183,11 +210,13 @@ export const AddMember = () => {
                     <SelectValue placeholder="Select a plan" />
                   </SelectTrigger>
                   <SelectContent>
-                    {plans.map((plan) => (
+                    {plans.length > 0 ? plans.map((plan) => (
                       <SelectItem key={plan.id} value={plan.id}>
                         {plan.name} - {plan.duration_in_months} months
                       </SelectItem>
-                    ))}
+                    )) : (
+                      <SelectItem value="" disabled>No plans available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -199,11 +228,13 @@ export const AddMember = () => {
                     <SelectValue placeholder="Select a batch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {batches.map((batch) => (
+                    {batches.length > 0 ? batches.map((batch) => (
                       <SelectItem key={batch.id} value={batch.id}>
                         {batch.name} - {batch.schedule_time}
                       </SelectItem>
-                    ))}
+                    )) : (
+                      <SelectItem value="" disabled>No batches available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
